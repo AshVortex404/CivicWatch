@@ -11,8 +11,15 @@ const IssueSchema = new mongoose.Schema({
     imageUrl: { type: String }, // Storing URL string to keep it simple
     status: {
         type: String,
-        enum: ['Reported', 'In Progress', 'Resolved'],
+        enum: ['Reported', 'In Progress', 'Resolved', 'Re-opened'],
         default: 'Reported'
+    },
+    // New fields for community-driven workflow
+    taggedRepresentative: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    resolution: {
+        message: String,
+        imageUrl: String,
+        resolvedAt: Date
     },
     upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     createdAt: { type: Date, default: Date.now }

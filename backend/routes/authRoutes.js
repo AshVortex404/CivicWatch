@@ -46,4 +46,14 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// GET all representatives (for dropdown)
+router.get('/representatives', async (req, res) => {
+    try {
+        const reps = await User.find({ role: 'representative' }).select('username designation area');
+        res.json(reps);
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 module.exports = router;

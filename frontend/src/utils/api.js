@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -32,7 +32,11 @@ export const createIssue = (issueData) =>
 export const upvoteIssue = (id) =>
     api.put(`/issues/${id}/upvote`);
 
-export const updateIssueStatus = (id, status) =>
-    api.put(`/issues/${id}/status`, { status });
+export const getRepresentatives = () => api.get('/auth/representatives');
+
+export const updateIssueStatus = (id, status, resolutionData = {}) =>
+    api.put(`/issues/${id}/status`, { status, ...resolutionData });
+
+export const reopenIssue = (id) => api.put(`/issues/${id}/reopen`);
 
 export default api;

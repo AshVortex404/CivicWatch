@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createIssue } from '../utils/api';
+import { createIssue, getRepresentatives } from '../utils/api';
 import './ReportIssue.css';
 
 const ReportIssue = () => {
@@ -8,14 +8,33 @@ const ReportIssue = () => {
         title: '',
         description: '',
         category: 'Road',
+        area: '',
+        taggedRepresentative: '',
         lat: '',
         lng: '',
         imageUrl: ''
     });
+    const [representatives, setRepresentatives] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // Derived state for areas
+    const availableAreas = [...new Set(representatives.map(r => r.area))].filter(Boolean);
+    const filteredReps = representatives.filter(r => r.area === formData.area);
+
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchReps = async () => {
+            try {
+                const { data } = await getRepresentatives();
+                setRepresentatives(data);
+            } catch (err) {
+                console.error("Failed to fetch representatives");
+            }
+        };
+        fetchReps();
+    }, []);
 
     const handleChange = (e) => {
         setFormData({
@@ -44,6 +63,7 @@ const ReportIssue = () => {
                 title: formData.title,
                 description: formData.description,
                 category: formData.category,
+                taggedRepresentative: formData.taggedRepresentative,
                 lat,
                 lng,
                 imageUrl: formData.imageUrl || undefined
@@ -87,7 +107,7 @@ const ReportIssue = () => {
 
                 <form onSubmit={handleSubmit} className="report-form">
                     <div className="form-group">
-                        <label>Title *</label>
+                        <label>Title</label>
                         <input
                             type="text"
                             name="title"
@@ -99,7 +119,7 @@ const ReportIssue = () => {
                     </div>
 
                     <div className="form-group">
-                        <label>Description *</label>
+                        <label>Description</label>
                         <textarea
                             name="description"
                             value={formData.description}
@@ -111,7 +131,7 @@ const ReportIssue = () => {
                     </div>
 
                     <div className="form-group">
-                        <label>Category *</label>
+                        <label>Category</label>
                         <select
                             name="category"
                             value={formData.category}
@@ -126,9 +146,43 @@ const ReportIssue = () => {
                         </select>
                     </div>
 
+                    <div className="form-group">
+                        <label>Area</label>
+                        <select
+                            name="area"
+                            value={formData.area}
+                            onChange={(e) => setFormData({ ...formData, area: e.target.value, taggedRepresentative: '' })}
+                            required
+                        >
+                            <option value="">Select Area</option>
+                            {availableAreas.map(area => (
+                                <option key={area} value={area}>{area}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {formData.area && (
+                        <div className="form-group">
+                            <label>Tag Representative</label>
+                            <select
+                                name="taggedRepresentative"
+                                value={formData.taggedRepresentative}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">Select Representative</option>
+                                {filteredReps.map(rep => (
+                                    <option key={rep._id} value={rep._id}>
+                                        {rep.username} ({rep.designation})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <div className="location-group">
                         <div className="form-group">
-                            <label>Latitude *</label>
+                            <label>Latitude</label>
                             <input
                                 type="text"
                                 name="lat"
@@ -140,7 +194,7 @@ const ReportIssue = () => {
                         </div>
 
                         <div className="form-group">
-                            <label>Longitude *</label>
+                            <label>Longitude</label>
                             <input
                                 type="text"
                                 name="lng"

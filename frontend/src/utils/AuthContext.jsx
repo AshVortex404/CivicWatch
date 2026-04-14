@@ -10,19 +10,19 @@ export const AuthProvider = ({ children }) => {
         // Check if user is logged in
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
-        const userId = localStorage.getItem('userId');
+        const id = localStorage.getItem('userId');
 
-        if (token && role && userId) {
-            setUser({ token, role, userId });
+        if (token && role && id) {
+            setUser({ token, role, id });
         }
         setLoading(false);
     }, []);
 
-    const loginUser = (token, role, userId) => {
+    const loginUser = (token, role, id) => {
         localStorage.setItem('token', token);
         localStorage.setItem('role', role);
-        localStorage.setItem('userId', userId);
-        setUser({ token, role, userId });
+        localStorage.setItem('userId', id);
+        setUser({ token, role, id });
     };
 
     const logoutUser = () => {

@@ -1,52 +1,82 @@
-import { useState, useContext } from 'react';
-import { upvoteIssue, updateIssueStatus } from '../utils/api';
-import { AuthContext } from '../utils/AuthContext';
+import { useState } from 'react';
+import { updateIssueStatus, upvoteIssue, reopenIssue } from '../utils/api';
 import './IssueCard.css';
 
-const IssueCard = ({ issue, onUpdate }) => {
-    const { user } = useContext(AuthContext);
-    const [updating, setUpdating] = useState(false);
+const IssueCard = ({ issue, currentUser, style }) => {
+    const [resolutionForm, setResolutionForm] = useState(false);
+    const [resolutionData, setResolutionData] = useState({ message: '', imageUrl: '' });
+    const [upvotes, setUpvotes] = useState(issue.upvotes || []);
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'Reported': return '#f59e0b';
+            case 'In Progress': return '#3b82f6';
+            case 'Resolved': return '#10b981';
+            case 'Re-opened': return '#ef4444';
+            default: return '#6b7280';
+        }
+    };
+
+    const handleStatusChange = async (newStatus) => {
+        if (newStatus === 'Resolved') {
+            setResolutionForm(true);
+            return;
+        }
+        try {
+            await updateIssueStatus(issue._id, newStatus);
+        } catch (err) {
+            alert('Failed to update status');
+        }
+    };
 
     const handleUpvote = async () => {
+        if (!currentUser) {
+            alert('Please login to upvote');
+            return;
+        }
         try {
-            await upvoteIssue(issue._id);
-            onUpdate();
+            const { data } = await upvoteIssue(issue._id);
+            setUpvotes(data.upvotes);
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to upvote');
         }
     };
 
-    const handleStatusChange = async (newStatus) => {
-        setUpdating(true);
+    const handleReopen = async () => {
+        if (!window.confirm('Are you sure this issue is not resolved yet? This will alert the representative.')) return;
         try {
-            await updateIssueStatus(issue._id, newStatus);
-            onUpdate();
+            await reopenIssue(issue._id);
+            alert('Issue re-opened successfully. The representative has been notified.');
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to update status');
-        } finally {
-            setUpdating(false);
+            alert(err.response?.data?.message || 'Failed to re-open issue');
         }
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'Reported': return '#ed8936';
-            case 'In Progress': return '#4299e1';
-            case 'Resolved': return '#48bb78';
-            default: return '#718096';
+    const submitResolution = async () => {
+        if (!resolutionData.message.trim()) {
+            alert('Please provide a resolution message');
+            return;
+        }
+        try {
+            await updateIssueStatus(issue._id, 'Resolved', resolutionData);
+            setResolutionForm(false);
+        } catch (err) {
+            alert('Failed to submit resolution');
         }
     };
 
     const formatDate = (date) => {
-        return new Date(date).toLocaleDateString('en-US', {
+        return new Date(date).toLocaleDateString('en-IN', {
+            year: 'numeric',
             month: 'short',
-            day: 'numeric',
-            year: 'numeric'
+            day: 'numeric'
         });
     };
 
+    const hasUpvoted = upvotes.includes(currentUser?.id);
+
     return (
-        <div className="issue-card">
+        <div className="issue-card" style={style}>
             <div className="issue-header">
                 <div>
                     <h3 className="issue-title">{issue.title}</h3>
@@ -68,35 +98,86 @@ const IssueCard = ({ issue, onUpdate }) => {
 
             <div className="issue-footer">
                 <div className="issue-meta">
-                    <span className="issue-date">🕒 {formatDate(issue.createdAt)}</span>
-                    <span className="issue-location">
-                        📍 {issue.location.lat.toFixed(4)}, {issue.location.lng.toFixed(4)}
-                    </span>
+                    <span>📅 {formatDate(issue.createdAt)}</span>
+                    {issue.lat && issue.lng && (
+                        <span>📍 {issue.lat.toFixed(4)}, {issue.lng.toFixed(4)}</span>
+                    )}
                 </div>
 
                 <div className="issue-actions">
                     <button
-                        onClick={handleUpvote}
                         className="upvote-btn"
-                        disabled={issue.upvotes?.includes(user?.userId)}
+                        onClick={handleUpvote}
+                        disabled={hasUpvoted}
                     >
-                        👍 {issue.upvotes?.length || 0}
+                        {hasUpvoted ? '✅ Upvoted' : '👍 Upvote'} ({upvotes.length})
                     </button>
-
-                    {user?.role === 'admin' && (
-                        <select
-                            value={issue.status}
-                            onChange={(e) => handleStatusChange(e.target.value)}
-                            className="status-select"
-                            disabled={updating}
+                    {issue.status === 'Resolved' && currentUser?.role === 'citizen' && (
+                        <button
+                            className="reopen-btn"
+                            onClick={handleReopen}
                         >
-                            <option value="Reported">Reported</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Resolved">Resolved</option>
-                        </select>
+                            🚫 Not Resolved?
+                        </button>
                     )}
                 </div>
             </div>
+
+            {issue.taggedRepresentative && (
+                <div className="tagged-rep">
+                    <span>
+                        👮 Assigned to: {issue.taggedRepresentative.username} ({issue.taggedRepresentative.designation})
+                    </span>
+                </div>
+            )}
+
+            {issue.status === 'Resolved' && issue.resolution && (
+                <div className="resolution-box">
+                    <h4>✅ Resolution</h4>
+                    <p>"{issue.resolution.message}"</p>
+                    {issue.resolution.imageUrl && (
+                        <img src={issue.resolution.imageUrl} alt="Resolution" className="resolution-image" />
+                    )}
+                    <small>Resolved on {formatDate(issue.resolution.resolvedAt)}</small>
+                </div>
+            )}
+
+            {currentUser?.role === 'representative' && currentUser?.id === issue.taggedRepresentative?._id && issue.status !== 'Resolved' && (
+                <div className="status-controls">
+                    <select
+                        value={issue.status}
+                        onChange={(e) => handleStatusChange(e.target.value)}
+                        className="status-select"
+                    >
+                        <option value="Reported">Reported</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Re-opened">Re-opened</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                </div>
+            )}
+
+            {resolutionForm && (
+                <div className="resolution-form">
+                    <h4>Submit Resolution</h4>
+                    <textarea
+                        placeholder="Describe how the issue was resolved..."
+                        value={resolutionData.message}
+                        onChange={(e) => setResolutionData({ ...resolutionData, message: e.target.value })}
+                        rows="3"
+                    />
+                    <input
+                        type="url"
+                        placeholder="Resolution image URL (optional)"
+                        value={resolutionData.imageUrl}
+                        onChange={(e) => setResolutionData({ ...resolutionData, imageUrl: e.target.value })}
+                    />
+                    <div className="resolution-actions">
+                        <button onClick={submitResolution} className="submit-resolution">Submit</button>
+                        <button onClick={() => setResolutionForm(false)} className="cancel-resolution">Cancel</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

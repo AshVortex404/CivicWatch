@@ -55,21 +55,22 @@ const MapView = () => {
         );
     }
 
-    // Default center (India coordinates, you can change this)
-    const defaultCenter = issues.length > 0
+    // Nashik, Maharashtra coordinates
+    const nashikCenter = [19.9975, 73.7898];
+    const defaultCenter = issues.length > 0 && issues[0].location
         ? [issues[0].location.lat, issues[0].location.lng]
-        : [20.5937, 78.9629];
+        : nashikCenter;
 
     return (
         <div className="map-view">
             <div className="map-header">
-                <h1>Issues Map</h1>
-                <p>📍 {issues.length} issues reported</p>
+                <h1>Nashik Civic Issues Map</h1>
+                <p>📍 {issues.length} issues reported in Nashik</p>
             </div>
 
             <MapContainer
                 center={defaultCenter}
-                zoom={6}
+                zoom={13}
                 className="map-container"
             >
                 <TileLayer

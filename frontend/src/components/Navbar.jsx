@@ -46,7 +46,7 @@ const Navbar = () => {
 
                 <div className="navbar-user">
                     <span className="user-role">
-                        {user.role === 'admin' ? '👑 Admin' : '👤 User'}
+                        {user.role === 'admin' ? ' Admin' : '👤 User'}
                     </span>
                     <button onClick={handleLogout} className="logout-btn">
                         Logout

@@ -1,53 +1,65 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { getIssues } from '../utils/api';
+import { AuthContext } from '../utils/AuthContext';
 import IssueCard from '../components/IssueCard';
-import io from 'socket.io-client';
+import { io } from 'socket.io-client';
 import './ListView.css';
-
-const socket = io('http://localhost:5000');
 
 const ListView = () => {
     const [issues, setIssues] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('All');
+    const [loading, setLoading] = useState(true);
+    const { user } = useContext(AuthContext);
+
+    useEffect(() => {
+        fetchIssues();
+
+        // Socket.IO setup for real-time updates
+        const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
+
+        socket.on('statusUpdated', (data) => {
+            setIssues((prevIssues) =>
+                prevIssues.map((issue) =>
+                    issue._id === data.id
+                        ? { ...issue, status: data.status, resolution: data.resolution }
+                        : issue
+                )
+            );
+        });
+
+        return () => socket.disconnect();
+    }, []);
 
     const fetchIssues = async () => {
         try {
             const { data } = await getIssues();
-            setIssues(data);
+
+            // Filter issues based on user role
+            if (user?.role === 'representative') {
+                // Representatives only see issues tagged to them
+                const myIssues = data.filter(issue =>
+                    issue.taggedRepresentative?._id === user.id
+                );
+                setIssues(myIssues);
+            } else {
+                // Citizens see all issues
+                setIssues(data);
+            }
         } catch (err) {
-            console.error('Failed to fetch issues:', err);
+            console.error('Failed to fetch issues');
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchIssues();
-
-        // Listen for real-time status updates
-        socket.on('statusUpdated', ({ id, status }) => {
-            setIssues(prev =>
-                prev.map(issue =>
-                    issue._id === id ? { ...issue, status } : issue
-                )
-            );
-        });
-
-        return () => {
-            socket.off('statusUpdated');
-        };
-    }, []);
-
     const filteredIssues = filter === 'All'
         ? issues
-        : issues.filter(issue => issue.status === filter);
+        : issues.filter((issue) => issue.status === filter);
 
     if (loading) {
         return (
             <div className="loading-container">
                 <div className="spinner"></div>
-                <p>Loading issues...</p>
             </div>
         );
     }
@@ -55,7 +67,11 @@ const ListView = () => {
     return (
         <div className="list-view">
             <div className="list-header">
-                <h1>Civic Issues</h1>
+                <h1>{user?.role === 'representative' ? 'My Assigned Issues' : 'Civic Issues'}</h1>
+                <p>{user?.role === 'representative'
+                    ? `📋 ${issues.length} issues assigned to you`
+                    : `📋 ${issues.length} total issues`}
+                </p>
                 <div className="filter-buttons">
                     {['All', 'Reported', 'In Progress', 'Resolved'].map(status => (
                         <button
@@ -70,18 +86,17 @@ const ListView = () => {
             </div>
 
             {filteredIssues.length === 0 ? (
-                <div className="empty-state">
-                    <span className="empty-icon">📭</span>
-                    <h2>No issues found</h2>
-                    <p>No issues match the current filter.</p>
+                <div className="no-issues">
+                    <p>No issues found.</p>
                 </div>
             ) : (
                 <div className="issues-grid">
-                    {filteredIssues.map(issue => (
+                    {filteredIssues.map((issue, index) => (
                         <IssueCard
                             key={issue._id}
                             issue={issue}
-                            onUpdate={fetchIssues}
+                            currentUser={user}
+                            style={{ animationDelay: `${index * 0.1}s` }}
                         />
                     ))}
                 </div>

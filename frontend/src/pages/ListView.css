@@ -6,6 +6,7 @@
 
 .list-header {
     margin-bottom: 32px;
+    animation: fadeIn 0.6s ease-out;
 }
 
 .list-header h1 {
@@ -36,12 +37,14 @@
 .filter-buttons button:hover {
     border-color: #667eea;
     color: #667eea;
+    transform: translateY(-2px);
 }
 
 .filter-buttons button.active {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-color: transparent;
+    transform: scale(1.05);
 }
 
 .issues-grid {
