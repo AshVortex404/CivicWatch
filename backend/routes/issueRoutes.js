@@ -62,13 +62,15 @@ router.put('/:id/status', auth, async (req, res) => {
 
         await issue.save();
 
-        // SOCKET IO: Emit update with full details
+        // SOCKET IO: Emit update (no-op in serverless environments like Vercel)
         const io = req.app.get('io');
-        io.emit('statusUpdated', {
-            id: issue._id,
-            status: issue.status,
-            resolution: issue.resolution
-        });
+        if (io) {
+            io.emit('statusUpdated', {
+                id: issue._id,
+                status: issue.status,
+                resolution: issue.resolution
+            });
+        }
 
         res.json(issue);
     } catch (err) {
@@ -110,13 +112,15 @@ router.put('/:id/reopen', auth, async (req, res) => {
         // We keep the old resolution data but the status changes
         await issue.save();
 
-        // SOCKET IO: Emit update
+        // SOCKET IO: Emit update (no-op in serverless environments like Vercel)
         const io = req.app.get('io');
-        io.emit('statusUpdated', {
-            id: issue._id,
-            status: issue.status,
-            resolution: issue.resolution
-        });
+        if (io) {
+            io.emit('statusUpdated', {
+                id: issue._id,
+                status: issue.status,
+                resolution: issue.resolution
+            });
+        }
 
         res.json(issue);
     } catch (err) {
