@@ -1,0 +1,9 @@
+*.pem
+DEPLOYMENT_INSTRUCTIONS.txt
+
+# Sensitive / local files
+ansible/secrets.yml
+ansible/ansible.cfg
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/.terraform/
