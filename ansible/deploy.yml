@@ -43,7 +43,17 @@
         groups: docker
         append: true
 
-    # 6. Clone application
+    - name: Reset connection so docker group membership takes effect
+      meta: reset_connection
+
+    # 6. Login to GitHub Container Registry (ghcr.io)
+    - name: Login to ghcr.io
+      become_user: ubuntu
+      shell: echo "{{ ghcr_token }}" | docker login ghcr.io -u ashvortex404 --password-stdin
+      args:
+        executable: /bin/bash
+
+    # 7. Clone application
     - name: Clone CityCare24 repository
       git:
         repo: "https://github.com/sarthak018-hub/CityCare24.git"
@@ -52,7 +62,7 @@
         force: yes
       become_user: ubuntu
 
-    # 7. Copy Docker files (not committed to git)
+    # 8. Copy docker-compose.yml (uses pre-built ghcr.io images)
     - name: Copy docker-compose.yml
       copy:
         src: /home/sensei/CityCare24/docker-compose.yml
@@ -61,23 +71,7 @@
         group: ubuntu
         mode: "0644"
 
-    - name: Copy backend Dockerfile
-      copy:
-        src: /home/sensei/CityCare24/backend/Dockerfile
-        dest: /home/ubuntu/CityCare24/backend/Dockerfile
-        owner: ubuntu
-        group: ubuntu
-        mode: "0644"
-
-    - name: Copy frontend Dockerfile
-      copy:
-        src: /home/sensei/CityCare24/frontend/Dockerfile
-        dest: /home/ubuntu/CityCare24/frontend/Dockerfile
-        owner: ubuntu
-        group: ubuntu
-        mode: "0644"
-
-    # 8. Create backend environment file
+    # 9. Create backend environment file
     - name: Create backend environment file
       copy:
         dest: /home/ubuntu/CityCare24/backend/.env
@@ -85,9 +79,11 @@
         group: ubuntu
         mode: "0600"
         content: |
+          PORT=5000
           MONGO_URI={{ mongo_uri }}
+          JWT_SECRET=supersecretkey123
 
-    # 8. Create swap for small EC2 instance
+    # 10. Create swap for small EC2 instance
     - name: Check if swap exists
       command: swapon --show
       register: swap_status
@@ -121,14 +117,14 @@
         opts: sw
         state: present
 
-    # 9. Build and start application
-    - name: Build and start CityCare24
+    # 11. Pull latest images and start application
+    - name: Pull latest images and start CityCare24
       become_user: ubuntu
-      shell: cd /home/ubuntu/CityCare24 && docker compose up -d --build
+      shell: cd /home/ubuntu/CityCare24 && docker compose pull && docker compose up -d
       args:
         executable: /bin/bash
 
-    # 10. Show container status
+    # 12. Show container status
     - name: Show running containers
       become_user: ubuntu
       shell: cd /home/ubuntu/CityCare24 && docker compose ps
@@ -136,7 +132,7 @@
         executable: /bin/bash
       register: compose_status
 
-    # 11. Display status
+    # 13. Display status
     - name: Display container status
       debug:
         var: compose_status.stdout

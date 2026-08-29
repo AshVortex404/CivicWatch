@@ -15,7 +15,7 @@ const ListView = () => {
         fetchIssues();
 
         // Socket.IO setup for real-time updates
-        const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
+        const socket = io(import.meta.env.VITE_SOCKET_URL || '/');
 
         socket.on('statusUpdated', (data) => {
             setIssues((prevIssues) =>
