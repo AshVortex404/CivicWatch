@@ -97,6 +97,9 @@ jobs:
     name: Docker Build & Push to GHCR
     needs: [backend-test, frontend-lint-and-build, security-scan]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout Repository
