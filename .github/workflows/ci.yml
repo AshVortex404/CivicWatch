@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -136,9 +137,9 @@ jobs:
             ghcr.io/ashvortex404/citycare24-frontend:${{ github.sha }}
 
   deploy-kubernetes:
-    name: Continuous Deployment to Kubernetes
+    name: Continuous Deployment to Kubernetes (Optional)
     needs: [backend-test, frontend-lint-and-build, security-scan, docker-build-push]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && secrets.KUBE_CONFIG != ''
     runs-on: ubuntu-latest
 
     steps:
