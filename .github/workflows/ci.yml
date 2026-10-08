@@ -137,9 +137,9 @@ jobs:
             ghcr.io/ashvortex404/citycare24-frontend:${{ github.sha }}
 
   deploy-kubernetes:
-    name: Continuous Deployment to Kubernetes (Optional)
+    name: Continuous Deployment to Kubernetes (Manual Trigger Only)
     needs: [backend-test, frontend-lint-and-build, security-scan, docker-build-push]
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && secrets.KUBE_CONFIG != ''
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
