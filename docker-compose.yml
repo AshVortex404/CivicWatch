@@ -1,6 +1,7 @@
 services:
 
   backend:
+    build: ./backend
     image: ghcr.io/ashvortex404/citycare24-backend:latest
     container_name: citycare-backend
     env_file:
@@ -10,6 +11,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    build: ./frontend
     image: ghcr.io/ashvortex404/citycare24-frontend:latest
     container_name: citycare-frontend
     ports:
