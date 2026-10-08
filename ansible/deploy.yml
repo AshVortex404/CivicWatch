@@ -81,7 +81,7 @@
         content: |
           PORT=5000
           MONGO_URI={{ mongo_uri }}
-          JWT_SECRET=supersecretkey123
+          JWT_SECRET={{ jwt_secret | default('<YOUR_JWT_SECRET>') }}
 
     # 10. Create swap for small EC2 instance
     - name: Check if swap exists

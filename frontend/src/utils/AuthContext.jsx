@@ -1,22 +1,15 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState } from 'react';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        // Check if user is logged in
+    const [user, setUser] = useState(() => {
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
         const id = localStorage.getItem('userId');
-
-        if (token && role && id) {
-            setUser({ token, role, id });
-        }
-        setLoading(false);
-    }, []);
+        return (token && role && id) ? { token, role, id } : null;
+    });
+    const loading = false;
 
     const loginUser = (token, role, id) => {
         localStorage.setItem('token', token);

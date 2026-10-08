@@ -24,7 +24,7 @@ const IssueCard = ({ issue, currentUser, style }) => {
         }
         try {
             await updateIssueStatus(issue._id, newStatus);
-        } catch (err) {
+        } catch (_err) {
             alert('Failed to update status');
         }
     };
@@ -60,7 +60,7 @@ const IssueCard = ({ issue, currentUser, style }) => {
         try {
             await updateIssueStatus(issue._id, 'Resolved', resolutionData);
             setResolutionForm(false);
-        } catch (err) {
+        } catch (_err) {
             alert('Failed to submit resolution');
         }
     };

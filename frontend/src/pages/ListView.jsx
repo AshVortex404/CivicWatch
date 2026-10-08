@@ -45,7 +45,7 @@ const ListView = () => {
                 // Citizens see all issues
                 setIssues(data);
             }
-        } catch (err) {
+        } catch (_err) {
             console.error('Failed to fetch issues');
         } finally {
             setLoading(false);

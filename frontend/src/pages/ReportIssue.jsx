@@ -29,7 +29,7 @@ const ReportIssue = () => {
             try {
                 const { data } = await getRepresentatives();
                 setRepresentatives(data);
-            } catch (err) {
+            } catch (_err) {
                 console.error("Failed to fetch representatives");
             }
         };
