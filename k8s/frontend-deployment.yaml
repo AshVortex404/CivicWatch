@@ -17,9 +17,11 @@ spec:
         app: civicwatch-frontend
         app.kubernetes.io/component: frontend
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: frontend
-          image: ghcr.io/ashvortex404/citycare24-frontend:<IMAGE_TAG>
+          image: ghcr.io/ashvortex404/citycare24-frontend
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

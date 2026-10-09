@@ -17,9 +17,11 @@ spec:
         app: civicwatch-backend
         app.kubernetes.io/component: backend
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: backend
-          image: ghcr.io/ashvortex404/citycare24-backend:<IMAGE_TAG>
+          image: ghcr.io/ashvortex404/citycare24-backend
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000

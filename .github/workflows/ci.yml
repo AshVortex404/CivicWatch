@@ -137,20 +137,22 @@ jobs:
             ghcr.io/ashvortex404/citycare24-frontend:${{ github.sha }}
 
   deploy-kubernetes:
-    name: Continuous Deployment to Kubernetes (Manual Trigger Only)
+    name: Continuous Deployment to Kubernetes
     needs: [backend-test, frontend-lint-and-build, security-scan, docker-build-push]
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Linux, X64, civicwatch-k3s]
+    env:
+      KUBECONFIG: /home/ubuntu/.kube/config
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Kubeconfig Context
-        uses: azure/k8s-set-context@v3
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+      - name: Verify Kubernetes Access
+        run: |
+          kubectl get nodes
+          kubectl get deployments -n civicwatch
+          kustomize version
 
       - name: Update Kustomize Image Tags to Immutable Git SHA
         run: |
@@ -171,5 +173,6 @@ jobs:
           kubectl rollout status deployment/civicwatch-frontend -n civicwatch --timeout=180s
 
       - name: Inspect Cluster Pod Status
+        if: always()
         run: |
           kubectl get pods -n civicwatch -o wide
