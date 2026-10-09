@@ -14,5 +14,3 @@ resources:
   - grafana-dashboard.yaml
   - grafana-deployment.yaml
   - grafana-service.yaml
-  - ../sre/prometheus-alerts.yaml
-  - ../sre/grafana-sre-dashboard.yaml
